@@ -8,12 +8,21 @@ public class CubeController : MonoBehaviour
     private Dictionary<string, Material> cubeEffectMaterials;
 
     private float rollDuration = 0.3f;
+    private int jumpHeight = 3;
     private bool canStartRolling = true;
     private float[] possibleAngles = { 0, 90, 180, 270, 360, -90, -180, -270, -360};
     private Transform prevCubeTransform;
     
     private GameObject cubeSide;
     private string effectName = "Base";
+    private bool isFalling = false;
+    Vector3 lockRotation;
+    Vector3 lockPosition;
+
+    private bool jumpRight = false;
+    private bool jumpLeft = false;
+    private bool jumpForward = false;
+    private bool jumpBack = false;
 
     // Start is called before the first frame update
     void Start() {
@@ -28,7 +37,7 @@ public class CubeController : MonoBehaviour
 
     // Update is called once per frame
     void Update() {
-        if (canStartRolling) {
+        if (canStartRolling && !isFalling) {
             if (Input.GetKey(KeyCode.W))
                 StartCoroutine(Roll(Vector3.forward));
             else if (Input.GetKey(KeyCode.A))
@@ -37,9 +46,36 @@ public class CubeController : MonoBehaviour
                 StartCoroutine(Roll(Vector3.back));
             else if (Input.GetKey(KeyCode.D))
                 StartCoroutine(Roll(Vector3.right));
+        }
 
-            if (Input.GetKeyUp(KeyCode.Space))
-                Debug.Log(cubeEffectMaterials["Water"].name);
+        if (jumpRight) {
+            transform.position = transform.position + Vector3.right + (Vector3.up * jumpHeight);
+            transform.rotation = Quaternion.Euler(transform.eulerAngles.x, transform.eulerAngles.y, transform.eulerAngles.z - 180);
+            jumpRight = false;
+            canStartRolling = true;
+        } else if (jumpLeft) {
+            transform.position = transform.position + Vector3.left + (Vector3.up * jumpHeight);
+            transform.rotation = Quaternion.Euler(transform.eulerAngles.x, transform.eulerAngles.y, transform.eulerAngles.z + 180);
+            jumpLeft = false;
+            canStartRolling = true;
+        } else if (jumpForward) {
+            transform.position = transform.position + Vector3.forward + (Vector3.up * jumpHeight);
+            transform.rotation = Quaternion.Euler(transform.eulerAngles.x + 180, transform.eulerAngles.y, transform.eulerAngles.z);
+            jumpForward = false;
+            canStartRolling = true;
+        } else if (jumpBack) {
+            transform.position = transform.position + Vector3.back + (Vector3.up * jumpHeight);
+            transform.rotation = Quaternion.Euler(transform.eulerAngles.x - 180, transform.eulerAngles.y, transform.eulerAngles.z);
+            jumpBack = false;
+            canStartRolling = true;
+        }
+
+
+        if (isFalling) {
+            transform.rotation = Quaternion.Euler(lockRotation.x, lockRotation.y, lockRotation.z);
+            transform.position = new Vector3(lockPosition.x, transform.position.y, lockPosition.z);
+
+            checkIfFalling();
         }
     }
 
@@ -73,7 +109,26 @@ public class CubeController : MonoBehaviour
 
         prevCubeTransform = transform;
 
+        checkIfFalling();
+
         canStartRolling = true;
+    }
+
+    private void checkIfFalling() {
+        RaycastHit hit;
+        int layerMask = 1 << 9;
+        layerMask = ~layerMask;
+        Ray downRay = new Ray(transform.position, -Vector3.up);
+
+        if (Physics.Raycast(downRay, out hit, Mathf.Infinity, layerMask)) {
+            if (hit.distance > 0.51) {
+                isFalling = true;
+                lockRotation = new Vector3(transform.eulerAngles.x, transform.eulerAngles.y, transform.eulerAngles.z);
+                lockPosition = new Vector3(transform.position.x, transform.position.y, transform.position.z);
+            }
+            else if (hit.distance <= 0.51)
+                isFalling = false;
+        }
     }
 
     private float setRotation(float currAngle) {
@@ -107,6 +162,26 @@ public class CubeController : MonoBehaviour
             case "Water":
                 effectName = "Water";
                 break;
+            case "SpringRight":
+                effectName = "Base";
+                jumpRight = true;
+                canStartRolling = false;
+                break;
+            case "SpringLeft":
+                effectName = "Base";
+                jumpLeft = true;
+                canStartRolling = false;
+                break;
+            case "SpringForward":
+                effectName = "Base";
+                jumpForward = true;
+                canStartRolling = false;
+                break;
+            case "SpringBack":
+                effectName = "Base";
+                jumpBack = true;
+                canStartRolling = false;
+                break;
             default:
                 effectName = "Base";
                 break;
@@ -125,19 +200,6 @@ public class CubeController : MonoBehaviour
 
             if (name.Equals(TouchNames.TOP_TOUCH)) {
                 cubeSide = transform.Find("Top").gameObject;
-                /*
-                RaycastHit hit;
-                if (Physics.Raycast(cubeSide.transform.position, cubeSide.transform.TransformDirection(Vector3.up), out hit)) {
-                    Debug.Log("Did Hit");
-                    if (hit.collider.tag == "Obstacle") {
-                        Debug.Log("Vector direc: " + Vector3.left);
-                        Debug.Log("Cube Direc: " + cubeSide.transform.TransformDirection(Vector3.up));
-                        if (Vector3.Equals(Vector3.left, cubeSide.transform.TransformDirection(Vector3.up))) {
-                            Debug.Log("There is an obstacle on the left");
-                        }
-                    }
-                }
-                */
                 effectName = checkSide(collision.gameObject.name);
                 found = true;
             }
@@ -170,6 +232,22 @@ public class CubeController : MonoBehaviour
                 i++;
         }
 
+        /*
+        RaycastHit hit;
+        int layerMask = 1 << 9;
+        layerMask = ~layerMask;
+        Ray downRay = new Ray(transform.position, -Vector3.up);
+
+        if (Physics.Raycast(downRay, out hit, Mathf.Infinity, layerMask)) {
+            Debug.Log(hit.distance);
+            if (hit.distance > 0.51) {
+                isFalling = true;
+                lockRotation = new Vector3(transform.eulerAngles.x, transform.eulerAngles.y, transform.eulerAngles.z);
+            }
+            else if (hit.distance <= 0.51)
+                isFalling = false;
+        }
+        */
         changeSideTexture(cubeSide, effectName);  
     }
     

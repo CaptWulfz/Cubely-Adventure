@@ -17,7 +17,7 @@ public class TriggerCheck : MonoBehaviour
     }
 
     private void OnTriggerEnter(Collider other) {
-        Debug.Log("Triggering");
+        //Debug.Log("Triggering");
         if (other.gameObject.tag == "Obstacle")
             Debug.Log(this.name + " is Colliding with an Obstacle");
     }
