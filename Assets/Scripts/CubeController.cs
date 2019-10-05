@@ -11,9 +11,9 @@ public class CubeController : MonoBehaviour
     private bool canStartRolling = true;
     private float[] possibleAngles = { 0, 90, 180, 270, 360, -90, -180, -270, -360};
     private Transform prevCubeTransform;
-
+    
     private GameObject cubeSide;
-    //private string effectName = "Base";
+    private string effectName = "Base";
 
     // Start is called before the first frame update
     void Start() {
@@ -99,24 +99,21 @@ public class CubeController : MonoBehaviour
         renderer.material = cubeEffectMaterials[effectName];
     }
 
-    private IEnumerator checkCollide(Collider collider) {
-        yield return new WaitForSeconds(0.00005f);
+
+    private string checkSide(string collisionName) {
         string effectName = "Base";
 
-        if (collider.name == "Water")
-            effectName = "Water";
-        else
-            effectName = "Base";
+        switch (collisionName) {
+            case "Water":
+                effectName = "Water";
+                break;
+            default:
+                effectName = "Base";
+                break;
+        }
 
-        changeSideTexture(cubeSide, effectName);
+        return effectName;
     }
-
-    private void OnTriggerEnter(Collider other) {
-        //Debug.Log(other.name);
-        //Debug.Log(cubeSide.name);
-        StartCoroutine(checkCollide(other));
-    }
-
     private void OnCollisionEnter(Collision collision) {
         
         ContactPoint[] points = collision.contacts;
@@ -127,12 +124,12 @@ public class CubeController : MonoBehaviour
             string name = points[i].thisCollider.name;
 
             if (name.Equals(TouchNames.TOP_TOUCH)) {
-                Debug.Log("Top is Colliding");
                 cubeSide = transform.Find("Top").gameObject;
+                /*
                 RaycastHit hit;
                 if (Physics.Raycast(cubeSide.transform.position, cubeSide.transform.TransformDirection(Vector3.up), out hit)) {
                     Debug.Log("Did Hit");
-                    if (hit.collider.name == "Obstacle") {
+                    if (hit.collider.tag == "Obstacle") {
                         Debug.Log("Vector direc: " + Vector3.left);
                         Debug.Log("Cube Direc: " + cubeSide.transform.TransformDirection(Vector3.up));
                         if (Vector3.Equals(Vector3.left, cubeSide.transform.TransformDirection(Vector3.up))) {
@@ -140,32 +137,40 @@ public class CubeController : MonoBehaviour
                         }
                     }
                 }
+                */
+                effectName = checkSide(collision.gameObject.name);
                 found = true;
             }
-            else if (name.Equals(TouchNames.BOTTOM_TOUCH)) {
+            if (name.Equals(TouchNames.BOTTOM_TOUCH)) {
                 cubeSide = transform.Find("Bottom").gameObject;
+                effectName = checkSide(collision.gameObject.name);
                 found = true;
             }
-            else if (name.Equals(TouchNames.LEFT_TOUCH)) {
+            if (name.Equals(TouchNames.LEFT_TOUCH)) {
                 cubeSide = transform.Find("Left").gameObject;
+                effectName = checkSide(collision.gameObject.name);                 
                 found = true;
             }
-            else if (name.Equals(TouchNames.RIGHT_TOUCH)) {
+            if (name.Equals(TouchNames.RIGHT_TOUCH)) {
                 cubeSide = transform.Find("Right").gameObject;
+                effectName = checkSide(collision.gameObject.name);
                 found = true;
             }
-            else if (name.Equals(TouchNames.FRONT_TOUCH)) {
+            if (name.Equals(TouchNames.FRONT_TOUCH)) {
                 cubeSide = transform.Find("Front").gameObject;
+                effectName = checkSide(collision.gameObject.name);
                 found = true;
             }
-            else if (name.Equals(TouchNames.BACK_TOUCH)) {
+            if (name.Equals(TouchNames.BACK_TOUCH)) {
                 cubeSide = transform.Find("Back").gameObject;
+                effectName = checkSide(collision.gameObject.name);
                 found = true;
             }
             else
                 i++;
         }
-        
+
+        changeSideTexture(cubeSide, effectName);  
     }
     
 }
