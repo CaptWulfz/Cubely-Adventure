@@ -4,6 +4,7 @@ using UnityEngine;
 
 public class TriggerCheck : MonoBehaviour
 {
+    public bool isBlocked = false;
     // Start is called before the first frame update
     void Start()
     {
@@ -13,12 +14,15 @@ public class TriggerCheck : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        
+     
     }
-
+    
     private void OnTriggerEnter(Collider other) {
-        //Debug.Log("Triggering");
         if (other.gameObject.tag == "Obstacle")
+        {
+            isBlocked = true;
             Debug.Log(this.name + " is Colliding with an Obstacle");
+        }
     }
+    
 }

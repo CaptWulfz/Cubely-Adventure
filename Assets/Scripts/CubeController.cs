@@ -6,13 +6,16 @@ public class CubeController : MonoBehaviour
 {
     [SerializeField] public Material[] materials;
     private Dictionary<string, Material> cubeEffectMaterials;
-
     private float rollDuration = 0.3f;
     private int jumpHeight = 3;
     private bool canStartRolling = true;
     private float[] possibleAngles = { 0, 90, 180, 270, 360, -90, -180, -270, -360};
     private Transform prevCubeTransform;
-    
+
+    public GameObject lCheck;
+    public GameObject rCheck;
+    public GameObject fCheck;
+    public GameObject bCheck;
     private GameObject cubeSide;
     private string effectName = "Base";
     private bool isFalling = false;
@@ -23,28 +26,28 @@ public class CubeController : MonoBehaviour
     private bool jumpLeft = false;
     private bool jumpForward = false;
     private bool jumpBack = false;
+    private bool isDoneMoving;
+    private bool isBlocked;
 
     // Start is called before the first frame update
     void Start() {
         cubeEffectMaterials = new Dictionary<string, Material>();
         cubeEffectMaterials.Add("Base", materials[0]);
         cubeEffectMaterials.Add("Water", materials[1]);
-
         prevCubeTransform = transform;
-
         cubeSide = transform.Find("Bottom").gameObject;
     }
 
     // Update is called once per frame
     void Update() {
         if (canStartRolling && !isFalling) {
-            if (Input.GetKey(KeyCode.W))
+            if (Input.GetKey(KeyCode.W) && (fCheck.GetComponent<TriggerCheck>().isBlocked == false))
                 StartCoroutine(Roll(Vector3.forward));
-            else if (Input.GetKey(KeyCode.A))
+            else if (Input.GetKey(KeyCode.A) && (lCheck.GetComponent<TriggerCheck>().isBlocked == false))
                 StartCoroutine(Roll(Vector3.left));
-            else if (Input.GetKey(KeyCode.S))
+            else if (Input.GetKey(KeyCode.S) && (bCheck.GetComponent<TriggerCheck>().isBlocked == false))
                 StartCoroutine(Roll(Vector3.back));
-            else if (Input.GetKey(KeyCode.D))
+            else if (Input.GetKey(KeyCode.D) && (rCheck.GetComponent<TriggerCheck>().isBlocked == false))
                 StartCoroutine(Roll(Vector3.right));
         }
 
@@ -77,11 +80,17 @@ public class CubeController : MonoBehaviour
 
             checkIfFalling();
         }
+        else
+        {
+            isDoneMoving = false;
+            MoveCheck(isDoneMoving);
+        }
+
     }
 
     private IEnumerator Roll(Vector3 direction) {
         canStartRolling = false;
-
+        //Debug.Log("Moving");
         float rollDecimal = 0;
         float rollAngle = 90;
         float halfWidth = transform.localScale.x / 2;
@@ -152,12 +161,15 @@ public class CubeController : MonoBehaviour
     private void changeSideTexture(GameObject side, string effectName) {
         MeshRenderer renderer = side.GetComponent<MeshRenderer>();
         renderer.material = cubeEffectMaterials[effectName];
+        isDoneMoving = true;
+        MoveCheck(isDoneMoving);
+        //Debug.Log("Done moving");
     }
 
 
     private string checkSide(string collisionName) {
         string effectName = "Base";
-
+        
         switch (collisionName) {
             case "Water":
                 effectName = "Water";
@@ -186,7 +198,6 @@ public class CubeController : MonoBehaviour
                 effectName = "Base";
                 break;
         }
-
         return effectName;
     }
     private void OnCollisionEnter(Collision collision) {
@@ -232,23 +243,33 @@ public class CubeController : MonoBehaviour
                 i++;
         }
 
-        /*
-        RaycastHit hit;
-        int layerMask = 1 << 9;
-        layerMask = ~layerMask;
-        Ray downRay = new Ray(transform.position, -Vector3.up);
-
-        if (Physics.Raycast(downRay, out hit, Mathf.Infinity, layerMask)) {
-            Debug.Log(hit.distance);
-            if (hit.distance > 0.51) {
-                isFalling = true;
-                lockRotation = new Vector3(transform.eulerAngles.x, transform.eulerAngles.y, transform.eulerAngles.z);
-            }
-            else if (hit.distance <= 0.51)
-                isFalling = false;
-        }
-        */
         changeSideTexture(cubeSide, effectName);  
+    }
+
+    private void MoveCheck(bool doneMoving)
+    {
+        if (doneMoving)
+        {
+            //Debug.Log("WAITING");
+
+            lCheck.GetComponent<BoxCollider>().enabled = true;
+            rCheck.GetComponent<BoxCollider>().enabled = true;
+            fCheck.GetComponent<BoxCollider>().enabled = true;
+            bCheck.GetComponent<BoxCollider>().enabled = true;
+        }
+        else
+        {
+            //Debug.Log("MOVING");
+
+            lCheck.GetComponent<TriggerCheck>().isBlocked = false;
+            rCheck.GetComponent<TriggerCheck>().isBlocked = false;
+            fCheck.GetComponent<TriggerCheck>().isBlocked = false;
+            bCheck.GetComponent<TriggerCheck>().isBlocked = false;
+            lCheck.GetComponent<BoxCollider>().enabled = false;
+            rCheck.GetComponent<BoxCollider>().enabled= false;
+            fCheck.GetComponent<BoxCollider>().enabled = false;
+            bCheck.GetComponent<BoxCollider>().enabled = false;
+        }
     }
     
 }
