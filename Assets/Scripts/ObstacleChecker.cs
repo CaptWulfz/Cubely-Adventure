@@ -16,4 +16,5 @@ public class ObstacleChecker : MonoBehaviour
     {
         this.transform.position = cubely.gameObject.transform.position;
     }
+    
 }
